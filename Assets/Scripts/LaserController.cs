@@ -20,6 +20,11 @@ public class LaserController : MonoBehaviour
     public float massMax = 30;
     public Vector3 tractorForce = new Vector3(1,1,1);
     
+
+    private RaycastHit gravityBeamHit;
+    public  float gravityBeamStick = 5.0f;
+    private float gravityBeamTimer = 0.0f;
+
     // Use this for initialization
     void Start()
     {
@@ -207,6 +212,8 @@ public class LaserController : MonoBehaviour
 
     void GravityBeam()
     {
+        gravityBeamTimer -= Time.fixedDeltaTime;
+
         renderer.material.mainTextureOffset = new Vector2(0, Time.time);
 
         Ray ray = new Ray(transform.position, transform.forward);
@@ -217,27 +224,39 @@ public class LaserController : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, laserMaxDistance))
         {
+           
             line.SetPosition(1, hit.point);
             if (hit.rigidbody)
             {
                 Vector3 lastHit = hit.point;
+                float distance = (hit.transform.position - transform.position).magnitude;
 
-                if (Input.GetButton("Fire1"))
-                    {
-                        
-                        Vector3 distance = hit.point - ray.origin;
+                // ;
 
-                        //hit.transform.position = lastHit(hit.point - ray.origin);
-                        //hit.rigidbody.AddForce(Vector3.Dot(tractorForce, distance) - (distance);
-                        //hit.rigidbody.AddForceAtPosition(transform.forward * kineticForce, hit.point);
-                    }
-                    else if (Input.GetButton("Fire2"))
+                float lastdistance = distance;
+
+                if (Input.GetButton("Fire1") || (Input.GetButton("Fire2")))
                     {
-                        hit.transform.position = lastHit - (hit.point - ray.origin);
-                        //hit.rigidbody.AddForceAtPosition(-transform.forward * 10, hit.point);
+                    gravityBeamHit = hit;
+                    gravityBeamTimer = gravityBeamStick;
+
+                    Vector3 force = (transform.forward * distance + transform.position) - hit.transform.position;
+                  
+                        hit.rigidbody.AddForce(force * hit.rigidbody.mass * 100);
+
                     }
+                    
+                if (gravityBeamTimer >= 0)
+                {
+
+                    float distanceGBH = (gravityBeamHit.transform.position - transform.position).magnitude;
+
+                    Vector3 force = (transform.forward * distanceGBH + transform.position) - gravityBeamHit.transform.position;
+
+                    hit.rigidbody.AddForce(force * gravityBeamHit.rigidbody.mass);
                 }
             
+            }
         }
         else
         {
